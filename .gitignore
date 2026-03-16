@@ -1,0 +1,48 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+.env
+
+# Next.js / Node
+node_modules/
+.next/
+out/
+build/
+dist/
+.vercel
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Project Specific
+data/*.csv
+models/*.pkl
+!data/.gitkeep
+!models/.gitkeep
+
+**/node_modules/

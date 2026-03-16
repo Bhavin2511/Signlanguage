@@ -1,0 +1,13 @@
+{
+  "name": "silentvoice-root",
+  "version": "1.0.0",
+  "scripts": {
+    "dev:frontend": "cd voice && npm run dev",
+    "dev:backend": "python api.py",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "install:all": "pip install -r requirements.txt fastapi uvicorn python-multipart && cd voice && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
