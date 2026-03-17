@@ -90,7 +90,8 @@ const Hero = () => {
                   src="/images/hero.png"
                   alt="SilentVoice Sign Language Illustration"
                   fill
-                  className="object-cover"
+                  className="object-contain p-4"
+                  priority
                 />
               </div>
             </div>

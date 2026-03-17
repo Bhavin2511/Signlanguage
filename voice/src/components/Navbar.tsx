@@ -36,7 +36,7 @@ const Navbar = () => {
 
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          {!user ? (
+          {!user && (
             <>
               <Link
                 href="/login"
@@ -51,13 +51,6 @@ const Navbar = () => {
                 Sign Up
               </Link>
             </>
-          ) : (
-            <Link
-              href="/dashboard"
-              className="px-5 py-2.5 bg-accent-blue text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all active:scale-95"
-            >
-              Go to Dashboard
-            </Link>
           )}
         </div>
 

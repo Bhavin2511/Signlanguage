@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from "react";
 import { useISL } from "@/store/islStore";
 import { useISLModel } from "@/hooks/useISLModel";
 import { Play, Square, RotateCw } from "lucide-react";
@@ -15,9 +15,18 @@ declare global {
 
 interface ISLCameraProps {
   onPrediction?: (label: string | null) => void;
+  hideControls?: boolean;
+  hideStats?: boolean;
 }
 
-export default function ISLCamera({ onPrediction }: ISLCameraProps) {
+export interface ISLCameraRef {
+  startCamera: () => Promise<void>;
+  stopCamera: () => void;
+  togglePause: () => void;
+  switchCamera: () => void;
+}
+
+const ISLCamera = forwardRef<ISLCameraRef, ISLCameraProps>(({ onPrediction, hideControls = false, hideStats = false }, ref) => {
   const { state, dispatch } = useISL();
   const { processHands } = useISLModel();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -29,6 +38,13 @@ export default function ISLCamera({ onPrediction }: ISLCameraProps) {
   const [mpLoaded, setMpLoaded] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const latestHandsData = useRef<{ left: number[][] | null; right: number[][] | null }>({ left: null, right: null });
+
+  useImperativeHandle(ref, () => ({
+    startCamera,
+    stopCamera,
+    togglePause,
+    switchCamera,
+  }));
 
   // Load MediaPipe Hands from CDN
   useEffect(() => {
@@ -278,18 +294,20 @@ export default function ISLCamera({ onPrediction }: ISLCameraProps) {
       </div>
 
       {/* Two-hand guide bar */}
-      <div className="isl-hand-guide">
-        <div className={`isl-hand-indicator ${state.handsVisible >= 1 ? "detected" : ""}`}>
-          🤚 Left Hand {state.handsVisible >= 1 ? "✓" : "—"}
+      {!hideStats && (
+        <div className="isl-hand-guide">
+          <div className={`isl-hand-indicator ${state.handsVisible >= 1 ? "detected" : ""}`}>
+            🤚 Left Hand {state.handsVisible >= 1 ? "✓" : "—"}
+          </div>
+          <div className="isl-hand-divider">+</div>
+          <div className={`isl-hand-indicator ${state.handsVisible === 2 ? "detected" : ""}`}>
+            ✋ Right Hand {state.handsVisible === 2 ? "✓" : "—"}
+          </div>
+          <div className={`isl-hand-status ${state.handsVisible === 2 ? "ok" : "warn"}`}>
+            {state.handsVisible === 2 ? "BOTH DETECTED ✓" : state.handsVisible === 1 ? "1 HAND ✓" : "NO HANDS"}
+          </div>
         </div>
-        <div className="isl-hand-divider">+</div>
-        <div className={`isl-hand-indicator ${state.handsVisible === 2 ? "detected" : ""}`}>
-          ✋ Right Hand {state.handsVisible === 2 ? "✓" : "—"}
-        </div>
-        <div className={`isl-hand-status ${state.handsVisible === 2 ? "ok" : "warn"}`}>
-          {state.handsVisible === 2 ? "BOTH DETECTED ✓" : state.handsVisible === 1 ? "1 HAND ✓" : "NO HANDS"}
-        </div>
-      </div>
+      )}
 
       <div className="isl-camera-area">
         <video ref={videoRef} className="isl-video" autoPlay playsInline muted />
@@ -304,34 +322,40 @@ export default function ISLCamera({ onPrediction }: ISLCameraProps) {
         {state.isRunning && <div className="isl-scan-line" />}
       </div>
 
-      <div className="isl-camera-controls">
-        <button className="isl-btn isl-btn-primary" onClick={startCamera} disabled={state.isRunning || !state.modelReady}>
-          <Play size={18} /> Start
-        </button>
-        <button className="isl-btn isl-btn-secondary" onClick={togglePause} disabled={!state.isRunning}>
-          {state.isPaused ? <Play size={18} /> : <span>⏸</span>} {state.isPaused ? "Resume" : "Pause"}
-        </button>
-        <button className="isl-btn isl-btn-secondary" onClick={switchCamera}>
-          <RotateCw size={18} /> Switch
-        </button>
-        <button className="isl-btn isl-btn-danger" onClick={stopCamera} disabled={!state.isRunning}>
-          <Square size={18} /> Stop
-        </button>
-      </div>
+      {!hideControls && (
+        <div className="isl-camera-controls">
+          <button className="isl-btn isl-btn-primary" onClick={startCamera} disabled={state.isRunning || !state.modelReady}>
+            <Play size={18} /> Start
+          </button>
+          <button className="isl-btn isl-btn-secondary" onClick={togglePause} disabled={!state.isRunning}>
+            {state.isPaused ? <Play size={18} /> : <span>⏸</span>} {state.isPaused ? "Resume" : "Pause"}
+          </button>
+          <button className="isl-btn isl-btn-secondary" onClick={switchCamera}>
+            <RotateCw size={18} /> Switch
+          </button>
+          <button className="isl-btn isl-btn-danger" onClick={stopCamera} disabled={!state.isRunning}>
+            <Square size={18} /> Stop
+          </button>
+        </div>
+      )}
 
-      <div className="isl-stats-row">
-        {[
-          { v: state.fps || "—", k: "FPS" },
-          { v: `${state.handsVisible}/2`, k: "Hands" },
-          { v: state.detectionCount, k: "Detections" },
-          { v: sessionTime, k: "Session" },
-        ].map(({ v, k }) => (
-          <div key={k} className="isl-stat">
-            <div className="isl-stat-val" style={{ color: k === "Hands" ? (state.handsVisible === 2 ? "var(--isl-accent)" : "var(--isl-warn)") : undefined }}>{v}</div>
-            <div className="isl-stat-key">{k}</div>
-          </div>
-        ))}
-      </div>
+      {!hideStats && (
+        <div className="isl-stats-row">
+          {[
+            { v: state.fps || "—", k: "FPS" },
+            { v: `${state.handsVisible}/2`, k: "Hands" },
+            { v: state.detectionCount, k: "Detections" },
+            { v: sessionTime, k: "Session" },
+          ].map(({ v, k }) => (
+            <div key={k} className="isl-stat">
+              <div className="isl-stat-val" style={{ color: k === "Hands" ? (state.handsVisible === 2 ? "var(--isl-accent)" : "var(--isl-warn)") : undefined }}>{v}</div>
+              <div className="isl-stat-key">{k}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+});
+
+export default ISLCamera;
