@@ -208,53 +208,6 @@ export default function TranslatorPage() {
             </div>
           </section>
         </div>
-
-        {/* BOTTOM SECTION: Recent Translations */}
-        <section className="mt-8">
-          <div className="modern-card">
-            <div className="card-title mb-6">
-              <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
-                <History size={18} />
-              </div>
-              <span>Recent Translations</span>
-            </div>
-
-            <div className="recent-table-container">
-              <table className="recent-table">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Detected Sentence</th>
-                    <th>Type</th>
-                    <th className="text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((item) => (
-                    <tr key={item.id} className="group hover:bg-slate-50 transition-colors">
-                      <td className="text-slate-400 text-sm">{item.time}</td>
-                      <td className="font-semibold text-slate-700">{item.text}</td>
-                      <td>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                          item.type === "sent" ? "bg-teal-50 text-teal-600" : "bg-blue-50 text-blue-600"
-                        }`}>
-                          {item.type}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="btn-icon" title="Speak again"><Volume2 size={16} /></button>
-                          <button className="btn-icon" title="Copy text"><Copy size={16} /></button>
-                          <button className="btn-icon text-red-400 hover:text-red-600 hover:bg-red-50"><Trash2 size={16} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );
