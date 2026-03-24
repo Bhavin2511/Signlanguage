@@ -2,17 +2,18 @@
 import { useRef, useCallback, useEffect } from "react";
 import { useISL } from "@/store/islStore";
 
-const CONFIDENCE_THRESHOLD = 0.55; 
-const BUFFER_SIZE     = 7;
-const MAJORITY_NEEDED = 5;
+const CONFIDENCE_THRESHOLD = 0.70; 
+const SEQUENCE_LENGTH = 30;
 const HOLD_DURATION_MS = 2000;
-const API_URL = "http://localhost:8000/predict";
+const API_URL = "http://localhost:8001/predict_sequence";
 
 export function useISLModel() {
   const { state, dispatch } = useISL();
   const holdStartRef = useRef<number | null>(null);
   const lastHeldRef  = useRef<string | null>(null);
   const lastAddedRef = useRef<number>(0);
+  const sequenceRef = useRef<number[][]>([]);
+
 
   // Model is "ready" if the API is assumed to be up
   useEffect(() => {
@@ -39,15 +40,44 @@ export function useISLModel() {
     }
 
     // ── Call API for prediction ──────────────────────────────────────────────
-    const activeHand = rightLandmarks || leftLandmarks;
-    if (!activeHand) return;
+    let frameData = new Array(126).fill(0);
+    
+    if (leftLandmarks && leftLandmarks.length > 0) {
+      let wrist = leftLandmarks[0];
+      let j = 0;
+      for (let lm of leftLandmarks) {
+        frameData[j++] = lm[0] - wrist[0];
+        frameData[j++] = lm[1] - wrist[1];
+        frameData[j++] = (lm[2] || 0) - (wrist[2] || 0);
+      }
+    }
+    
+    if (rightLandmarks && rightLandmarks.length > 0) {
+      let wrist = rightLandmarks[0];
+      let j = 63;
+      for (let lm of rightLandmarks) {
+        frameData[j++] = lm[0] - wrist[0];
+        frameData[j++] = lm[1] - wrist[1];
+        frameData[j++] = (lm[2] || 0) - (wrist[2] || 0);
+      }
+    }
+
+    sequenceRef.current.push(frameData);
+    if (sequenceRef.current.length > SEQUENCE_LENGTH) {
+      sequenceRef.current.shift();
+    }
+
+    if (sequenceRef.current.length < SEQUENCE_LENGTH) {
+      dispatch({ type: "SET_PREDICTION", payload: { label: "—", confidence: 0, topK: [], handsDetected } });
+      return;
+    }
 
     try {
       const response = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-              landmarks: activeHand.map(([x, y]) => ({ x: x * 640, y: y * 480 }))
+              sequence: sequenceRef.current
           })
       });
 
@@ -55,7 +85,7 @@ export function useISLModel() {
       
       const data = await response.json();
       const majorLabel = data.prediction || "?";
-      const adjustedConf = 0.95; 
+      const adjustedConf = data.confidence || 0; 
 
       dispatch({ type: "PUSH_BUFFER", payload: { label: majorLabel, conf: adjustedConf } });
 
